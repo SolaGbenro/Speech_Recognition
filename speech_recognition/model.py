@@ -107,14 +107,14 @@ def train(model, batch_size, X_train, y_train, X_validation, y_validation, save_
     return history
 
 
-def plot_history(history):
+def plot_history(history, save_plot=False):
     """Plots accuracy/loss for training/validation set as a function of the epochs
     :param history: Training history of model
     :return: Plot
         Plot of accuracy vs validation accuracy, and loss vs validation loss
     """
 
-    fig, axs = plt.subplots(2)
+    fig, axs = plt.subplots(2, figsize=(10, 8))
 
     # create accuracy subplot
     axs[0].plot(history.history["accuracy"], label="accuracy")
@@ -131,4 +131,7 @@ def plot_history(history):
     axs[1].legend(loc="upper right")
     axs[1].set_title("Loss evaluation")
 
+    if save_plot:
+        fig.savefig('accuracy_loss.png', dpi=1000)
+    plt.tight_layout()
     plt.show()

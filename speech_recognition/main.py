@@ -176,6 +176,8 @@ if __name__ == '__main__':
 
     CURRENT_DIRECTORY = "../speech_recognition"
     root_audio_dir = "../speech_recognition/data"
+    # if SAVE_PATH is None, the model will not be saved, otherwise enter path
+    SAVE_PATH = None
     CREATE_DATA = False
 
     if CREATE_DATA:
@@ -199,7 +201,7 @@ if __name__ == '__main__':
     # create model
     model = build_model(input_shape=input_shape, loss=loss)
     # retain metrics after training for analysis
-    model_history = train(model=model, batch_size=48, X_train=X_train, y_train=y_train,
-                    X_validation=X_validation, y_validation=y_validation, save_path=None)
+    model_history = train(model=model, batch_size=64, X_train=X_train, y_train=y_train,
+                    X_validation=X_validation, y_validation=y_validation, save_path=SAVE_PATH)
     # visualize training performance
-    plot_history(history=model_history)
+    plot_history(history=model_history, save_plot=True)
