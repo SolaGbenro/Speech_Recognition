@@ -3,40 +3,54 @@ import matplotlib.pyplot as plt
 
 
 def build_model(input_shape, loss='categorical_crossentropy', learning_rate=0.001):
+    """
+    This Method will build a deep CNN with the addition of BatchNormalization and then print the model summary before
+    returning the model.
+    :param input_shape: Tuple
+        The first index will come directly from the MFCC feature matrix. First will be the number of rows in the
+        transposed feature matrix (value is variable, default=130 for 3 seconds of audio), next will be the columns in
+        the transposed feature matrix (Value is variablem default=13).
+    :param loss: String
+        categorical_crossentropy produces a one-hot array containing the probable match for each category.
+
+        sparse_categorical_crossentropy produces a category index of the most likely matching category.
+    :param learning_rate: Float
+        Starting point for the Adam optimizer
+    :return: tf.keras Model
+        First this will print the model summary, then return the model
+    """
     model = tf.keras.models.Sequential()
 
     # 1st conv layer
-    model.add(tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), activation="relu", input_shape=input_shape,
+    model.add(tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3), activation="relu", input_shape=input_shape,
                                      kernel_regularizer=tf.keras.regularizers.l2(0.001)))
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2), padding='same'))
 
     # 2nd conv layer
-    model.add(tf.keras.layers.Conv2D(256, (3, 3), activation='relu',
+    model.add(tf.keras.layers.Conv2D(128, (3, 3), activation='relu',
                                      kernel_regularizer=tf.keras.regularizers.l2(0.001)))
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2), padding='same'))
-    # TODO: REMOVE DROPOUT BELOW AFTER TESTING
-    tf.keras.layers.Dropout(0.1)
-
-    # # 2nd conv layer
-    # model.add(tf.keras.layers.Conv2D(32, (3, 3), activation='relu',
-    #                                  kernel_regularizer=tf.keras.regularizers.l2(0.001)))
-    # model.add(tf.keras.layers.BatchNormalization())
-    # model.add(tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2), padding='same'))
-    # # TODO: REMOVE DROPOUT BELOW AFTER TESTING
-    # tf.keras.layers.Dropout(0.1)
+    tf.keras.layers.Dropout(0.3)
 
     # 3rd conv layer
-    model.add(tf.keras.layers.Conv2D(256, (2, 2), activation='relu',
+    model.add(tf.keras.layers.Conv2D(128, (2, 2), activation='relu',
+                                     kernel_regularizer=tf.keras.regularizers.l2(0.001)))
+    model.add(tf.keras.layers.BatchNormalization())
+    model.add(tf.keras.layers.MaxPooling2D((2, 2), strides=(2, 2), padding='same'))
+    tf.keras.layers.Dropout(0.3)
+
+    # 4th conv layer
+    model.add(tf.keras.layers.Conv2D(128, (2, 2), activation='relu',
                                      kernel_regularizer=tf.keras.regularizers.l2(0.001)))
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.MaxPooling2D((2, 2), strides=(2, 2), padding='same'))
 
     # flatten output and feed into dense layer
     model.add(tf.keras.layers.Flatten())
-    model.add(tf.keras.layers.Dense(64, activation='relu'))
-    tf.keras.layers.Dropout(0.3)
+    model.add(tf.keras.layers.Dense(128, activation='relu'))
+    tf.keras.layers.Dropout(0.5)
 
     # softmax output layer
     model.add(tf.keras.layers.Dense(24, activation='softmax'))
@@ -54,15 +68,42 @@ def build_model(input_shape, loss='categorical_crossentropy', learning_rate=0.00
     return model
 
 
-def train(model, batch_size, X_train, y_train, X_validation, y_validation, save_path="model_2.h5",
+def train(model, batch_size, X_train, y_train, X_validation, y_validation, save_path="default_model_name.h5",
           epochs=200, patience=5, verbose=1):
+    """
+    This function institutes the earlystop callback. It is initiated with a high epoch count with the condition that
+    after a 'patience' number of epochs with no improvement, training with stop-early.
+    :param model: tf.keras Model
+        Built using the build_model() function.
+    :param batch_size: Int
+        Batch_size is the number of samples to take in at once. Larger numbers may help with generalization.
+    :param X_train: numpy array
+        MFCC feature matrix
+    :param y_train: numpy array
+        one-hot-encoded categorical variables for the actors i.e. Actor_01, Actor_02
+    :param X_validation: numpy array
+        Subset of original data not seen during training. used for val_accuracy
+    :param y_validation: numpy array
+        Subset of original data not seen during training. used for val_accuracy
+    :param save_path: String
+        Location to save model after fitting
+    :param epochs: Int
+        By default the epochs are set to a high number because of the institution of the early_stop callback
+    :param patience: Int
+        Number of epochs to wait with no improvement before stopping training
+    :param verbose: Int
+        How much information should be printed during the training process.
+    :return: tf.keras history.history
+        The newly created models metric history which can be used for in-depth analysis
+    """
 
     earlystop_callback = tf.keras.callbacks.EarlyStopping(monitor="val_accuracy", patience=patience, verbose=verbose)
 
     history = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
                         validation_data=(X_validation, y_validation), callbacks=[earlystop_callback])
 
-    model.save(save_path)
+    if save_path:
+        model.save(save_path)
     return history
 
 
